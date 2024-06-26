@@ -1,0 +1,4 @@
+graphene==3.3
+pytest==7.4.0
+pytest==8.0.2
+redis==4.6.0
