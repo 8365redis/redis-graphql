@@ -17,6 +17,7 @@ LDFLAGS = -shared -o
 BINDIR = bin
 SRCDIR = src
 INCDIR = include
+UNITTESTDIR = tests
 
 SOURCES = $(shell echo src/*.cpp)
 HEADERS = $(shell echo include/*.h)
@@ -43,3 +44,9 @@ load:
 
 test:
 	pytest -rP
+
+unit_test:
+	g++ -std=c++11 -Wall -I$(INCDIR) $(SRCDIR)/query_parser.cpp -c
+	g++ -std=c++11 -Wall query_parser.o $(UNITTESTDIR)/tests_parser.cpp -o tests_parser && ./tests_parser --reporter compact --success
+	rm tests_parser
+	rm query_parser.o

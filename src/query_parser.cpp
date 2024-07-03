@@ -1,6 +1,125 @@
 #include "query_parser.h"
 #include <iostream>
+#include <map>
+#include <sstream>
 
+
+void remove_whitespace(std::string& str){
+    str.erase(0, str.find_first_not_of(" \t\n\r\f\v"));
+    str.erase(str.find_last_not_of(" \t\n\r\f\v") + 1);
+}
+
+bool extractConditionsFromWhere(const std::string& input, Query& query) {
+    std::size_t start = input.find('{');
+    std::size_t end = input.find('}');
+    
+    if (start == std::string::npos || end == std::string::npos) {
+        return false; // Return fail
+    }
+    
+    std::string content = input.substr(start + 1, end - start - 1);
+    std::stringstream ss(content);
+    std::string key, value;
+    
+    while (ss >> key) {
+        if (key.back() == ',') {
+            key.pop_back(); // Remove trailing comma from key
+        }
+        if (key.back() == ':') {
+            key.pop_back(); // Remove trailing colon from key
+        }
+        if (ss.peek() == ' ') {
+            ss.ignore(); // Ignore the space after the colon
+        }
+        
+        std::getline(ss, value, ',');
+        if (value.back() == ' ') {
+            value.pop_back(); // Remove trailing space from value
+        }
+        if (value.front() == '"') {
+            value.erase(0, 1); // Remove leading quote from value
+        }
+        if (value.back() == '"') {
+            value.pop_back(); // Remove trailing quote from value
+        }
+        remove_whitespace(key);
+        remove_whitespace(value);
+        query.condition.conditions[key] = value;
+    }
+    
+    return true;
+}
+
+
+bool parse_query(std::string& query_text, Query& query){
+    //std::cout<<query_text<<std::endl;
+    remove_whitespace(query_text);
+
+    // TODO Add check for curly count to fail early
+
+    size_t first_curly_pos = query_text.find("{");
+    if (first_curly_pos != std::string::npos) {
+        query_text = query_text.substr(first_curly_pos);
+    } else {
+        return false;
+    }
+
+    std::size_t paranthesis_before_where_pos = query_text.find('(');
+    if(paranthesis_before_where_pos == std::string::npos){
+        return false;
+    }
+    std::size_t paranthesis_after_where_pos = query_text.find(')', paranthesis_before_where_pos);
+    if(paranthesis_after_where_pos == std::string::npos){
+        return false;
+    }
+
+    std::string type = query_text.substr(first_curly_pos + 1, paranthesis_before_where_pos - first_curly_pos - 1);
+    remove_whitespace(type);
+
+    std::cout<<"Type:" ;
+    std::cout<<type<<std::endl;
+    query.type = type;
+
+    std::string where_statement = query_text.substr(paranthesis_before_where_pos + 1, paranthesis_after_where_pos - paranthesis_before_where_pos - 1);
+    std::cout<<"Where statement:" ;
+    std::cout<<where_statement<<std::endl;
+
+    extractConditionsFromWhere(where_statement, query);
+
+    std::cout<<"Conditions:"<<std::endl ;
+    for (const auto& pair : query.condition.conditions) {
+        std::cout << "Key:" << pair.first << "-Value:" << pair.second <<"-"<<std::endl;
+    }
+
+    std::size_t fields_start_pos = query_text.find('{', paranthesis_after_where_pos);
+    if(fields_start_pos == std::string::npos){
+        return false;
+    }    
+    std::size_t fields_end_pos = query_text.find('}', fields_start_pos);
+    if(fields_end_pos == std::string::npos){
+        return false;
+    } 
+
+    std::string field_statement = query_text.substr(fields_start_pos + 1, fields_end_pos - fields_start_pos - 1);
+    std::cout<<"Fields statement:" ;
+    std::cout<<field_statement<<std::endl;
+
+    std::stringstream field_statement_stream(field_statement);
+    std::string field_raw;
+    while (field_statement_stream >> field_raw) {
+        remove_whitespace(field_raw);
+        query.fields.push_back(Query_Field(field_raw));
+    }
+
+    std::cout<<"Fields:"<<std::endl;
+    for (const auto& f : query.fields) {
+        std::cout << "Field: " << f.name <<  std::endl;
+    }
+
+    return true;
+}
+
+/*
 Query parse_query(const std::string& query) {
     Query parsed_query;
     std::istringstream stream(query);
@@ -55,6 +174,7 @@ Query parse_query(const std::string& query) {
 
     return parsed_query;
 }
+*/
 
 void print_query(const Query& query) {
     std::cout << "Type: " << query.type << std::endl;

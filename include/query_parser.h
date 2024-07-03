@@ -12,7 +12,7 @@ struct Query_Condition {
 
 struct Query_Field {
     std::string name;
-    std::vector<Query_Field> sub_fields; // Later maybe will be used for multi layer
+    Query_Field(const std::string& field_name) : name(field_name) {}
 };
 
 struct Query {
@@ -21,7 +21,7 @@ struct Query {
     std::vector<Query_Field> fields;
 };
 
-Query parse_query(const std::string& query);
+bool parse_query(std::string& query_text, Query& query);
 void print_query(const Query& query);
 
 #endif /* GRAPH_PARSER */
