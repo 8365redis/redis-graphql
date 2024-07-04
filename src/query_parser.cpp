@@ -2,11 +2,12 @@
 #include <iostream>
 #include <map>
 #include <sstream>
-
+#include <algorithm>
 
 void remove_whitespace(std::string& str){
     str.erase(0, str.find_first_not_of(" \t\n\r\f\v"));
     str.erase(str.find_last_not_of(" \t\n\r\f\v") + 1);
+    str.erase(std::remove(str.begin(), str.end(), '\"'), str.end());
 }
 
 bool extractConditionsFromWhere(const std::string& input, Query& query) {
